@@ -7,6 +7,9 @@ import { generateSQL } from "./agent/sqlGenerator.js";
 import { formatResponse } from "./agent/responseFormatter.js";
 import { config } from "./config/env.js";
 
+// Debug mode - set to false for production
+const DEBUG_MODE = process.env.DEBUG === "true";
+
 /* =======================
    MAIN LOOP
 ======================= */
@@ -59,7 +62,7 @@ import { config } from "./config/env.js";
         limit: result.limit,
       };
 
-      console.log("🧠 Intent:", intent);
+      if (DEBUG_MODE) console.log("🧠 Intent:", intent);
 
       const plan = planQuery(intent);
 
@@ -71,17 +74,17 @@ import { config } from "./config/env.js";
         continue;
       }
 
-      console.log("🗺️ Plan:", JSON.stringify(plan, null, 2));
+      if (DEBUG_MODE) console.log("🗺️ Plan:", JSON.stringify(plan, null, 2));
 
       const sql = generateSQL(plan);
-      console.log("🧠 SQL:", sql);
+      if (DEBUG_MODE) console.log("🧠 SQL:", sql);
 
       const res = await db.query(sql);
-      console.table(res.rows);
+      if (DEBUG_MODE) console.table(res.rows);
 
       // Format response tự nhiên
       const answer = await formatResponse(openai, intent, res.rows);
-      console.log("\n💬 Trả lời:", answer, "\n");
+      console.log(`\n💬 ${answer}\n`);
     } catch (e) {
       console.error("❌ Error:", e.message);
     }
