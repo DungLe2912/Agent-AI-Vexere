@@ -1,10 +1,12 @@
 export async function detectIntent(openai, question) {
   const prompt = `
-Extract structured intent.
+Phân tích câu hỏi và trả về intent phù hợp.
 
 Return JSON ONLY:
 {
-  intent: "PRICING" | "AVAILABILITY" | "ANALYTICS",
+  type: "GREETING" | "HELP" | "QUERY",
+  response?: string,
+  intent?: "PRICING" | "AVAILABILITY" | "ANALYTICS",
   metric?: "SUM" | "COUNT",
   field?: "available_seats",
   origin?: string,
@@ -20,12 +22,19 @@ Return JSON ONLY:
   limit?: number
 }
 
-Rules:
+Rules for type:
+- GREETING: Lời chào đơn giản (hi, hello, chào, hey...) => cần response
+- HELP: Hỏi hướng dẫn, agent làm gì, cách dùng... => cần response
+- QUERY: Câu hỏi cần tra database => cần intent và các field khác
+
+Rules for QUERY intent:
 - "tổng số", "tổng cộng" => ANALYTICS + metric SUM
-- "bao nhiêu chuyến", "số chuyến" => metric COUNT
+- "bao nhiêu chuyến", "số chuyến" => ANALYTICS + metric COUNT
 - "từ ngày X đến ngày Y" => startDate + endDate
 - "ngày X" => date
 - "đi Đà Lạt" => destination = "Đà Lạt"
+- Hỏi về giá vé => PRICING
+- Hỏi về lịch trình, chuyến xe còn chỗ => AVAILABILITY
 
 Question:
 "${question}"

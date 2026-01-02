@@ -21,6 +21,11 @@ function buildDateCondition(intent) {
 }
 
 export function planQuery(intent) {
+  // Skip planning if no intent (for greetings/help)
+  if (!intent || !intent.intent) {
+    return null;
+  }
+
   /* ========= ANALYTICS ========= */
   if (intent.intent === "ANALYTICS") {
     const conditions = [];
@@ -171,5 +176,5 @@ export function planQuery(intent) {
     };
   }
 
-  throw new Error("UNSUPPORTED_INTENT");
+  return null;
 }
