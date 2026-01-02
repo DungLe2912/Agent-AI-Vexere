@@ -3,8 +3,9 @@ import { ask, rl } from "./utils/cli.js";
 import { DatabaseFactory } from "./db/factory.js";
 import { detectIntent } from "./agent/intentParser.js";
 import { planQuery } from "./agent/planner.js";
-import { generateSQL } from "./agent/sqlGenerator.js";
+import { generateSQL, regenerateSQL } from "./agent/sqlGenerator.js";
 import { formatResponse } from "./agent/responseFormatter.js";
+import { getTableSchema } from "./agent/schemaInspector.js";
 import { config } from "./config/env.js";
 
 // Debug mode - set to false for production
@@ -79,7 +80,29 @@ const DEBUG_MODE = process.env.DEBUG === "true";
       const sql = generateSQL(plan);
       if (DEBUG_MODE) console.log("🧠 SQL:", sql);
 
-      const res = await db.query(sql);
+      let res;
+      let finalSQL = sql;
+
+      try {
+        res = await db.query(sql);
+      } catch (sqlError) {
+        // Self-healing: Try to fix SQL based on actual schema
+        if (DEBUG_MODE) console.log("⚠️ SQL Error:", sqlError.message);
+        console.log("🔧 Đang tự động sửa lỗi...");
+
+        // Get actual database schema
+        const schema = await getTableSchema(db, dbType);
+        if (DEBUG_MODE) console.log("📋 Schema:\n", schema);
+
+        // Regenerate SQL based on actual schema
+        finalSQL = await regenerateSQL(openai, sql, sqlError.message, schema);
+        if (DEBUG_MODE) console.log("🔄 Fixed SQL:", finalSQL);
+
+        // Retry with fixed SQL
+        res = await db.query(finalSQL);
+        console.log("✅ Đã tự động sửa lỗi thành công!\n");
+      }
+
       if (DEBUG_MODE) console.table(res.rows);
 
       // Format response tự nhiên
