@@ -1,11 +1,11 @@
 import OpenAI from "openai";
-import { ask, rl } from "./utils/cli.js";
-import { PostgresAdapter } from "./db/pg.js";
-import { detectIntent } from "./agent/intentParser.js";
-import { planQuery } from "./agent/planner.js";
-import { generateSQL } from "./agent/sqlGenerator.js";
-import { formatResponse } from "./agent/responseFormatter.js";
-import { config } from "./config/env.js";
+import { ask, rl } from "../utils/cli.js";
+import { PostgresAdapter } from "../db/pg.js";
+import { detectIntent } from "../agent/intentParser.js";
+import { planQuery } from "../agent/planner.js";
+import { generateSQL } from "../agent/sqlGenerator.js";
+import { formatResponse } from "../agent/responseFormatter.js";
+import { config } from "../config/env.js";
 
 /* =======================
    MAIN LOOP
