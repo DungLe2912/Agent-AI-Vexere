@@ -10,6 +10,8 @@ An intelligent conversational agent that understands natural language questions 
 - 📊 **Smart Query Planning** - Converts intents to structured query plans
 - 🔄 **SQL Generation** - Generates optimized SQL from query plans
 - 💬 **Natural Responses** - Formats results in conversational Vietnamese
+- 🔧 **Self-Healing** - Automatically fixes SQL when database schema changes
+- 🐛 **Debug Mode** - Toggle technical details for development/production
 
 ## 🚀 Quick Start
 
@@ -47,12 +49,14 @@ An intelligent conversational agent that understands natural language questions 
 
 ## ⚙️ Configuration
 
-### Environment Variables
+### Environment Variables | Required |
 
-| Variable         | Description                | Required |
-| ---------------- | -------------------------- | -------- |
-| `OPENAI_API_KEY` | Your OpenAI API key        | ✅       |
-| `DATABASE_URL`   | Database connection string | ✅       |
+| ---------------- | -------------------------------------- | -------- |
+| `OPENAI_API_KEY` | Your OpenAI API key | ✅ |
+| `DATABASE_URL` | Database connection string | ✅ |
+| `DEBUG` | Show technical details (true/false) | ❌------- |
+| `OPENAI_API_KEY` | Your OpenAI API key | ✅ |
+| `DATABASE_URL` | Database connection string | ✅ |
 
 ### Database Connection Strings
 
@@ -80,30 +84,90 @@ mongodb://username:password@hostname:27017/database_name
 /path/to/database.db
 ```
 
-## 📖 Usage Examples
+**Production Mode (Clean, User-Friendly):**
 
 ```
 > Chào bạn
 💬 Xin chào! Tôi có thể giúp bạn tra cứu thông tin về chuyến xe. Hãy hỏi tôi nhé!
 
-> Tôi muốn đi Nha Trang từ HCM vào ngày 25/12
-🧠 Intent: { intent: 'AVAILABILITY', origin: 'HCM', destination: 'Nha Trang', date: '2023-12-25' }
-🗺️ Plan: { from: 'trips', join: {...}, select: [...] }
-🧠 SQL: SELECT trips.trip_id, routes.origin, ... WHERE ...
-💬 Có 3 chuyến xe khả dụng từ HCM đến Nha Trang vào ngày 25/12...
+> Tôi muốn đi Nha Trang từ Hồ Chí Minh vào ngày 25/12
+💬 Rất tiếc, chuyến đi Nha Trang từ Hồ Chí Minh vào ngày 25/12 đã bị hủy.
+   Bạn có thể chọn ngày khác hoặc liên hệ hotline để được hỗ trợ.
 
 > Tổng số ghế trống đi Đà Lạt
-💬 Hiện có tổng cộng 45 ghế trống trên các chuyến đi Đà Lạt.
+💬 Hiện có tổng cộng 17 ghế trống trên các chuyến đi Đà Lạt.
 
-> Giá vé từ Hà Nội đi Sapa
-💬 Giá vé từ Hà Nội đi Sapa là 250,000 VNĐ.
+> Liệt kê các chuyến xe có giá vé cao hơn 200.000
+🔧 Đang tự động sửa lỗi...
+✅ Đã tự động sửa lỗi thành công!
+💬 Có 2 tuyến đường: Hồ Chí Minh - Đà Lạt (300,000 VNĐ) và
+   Hồ Chí Minh - Nha Trang (250,000 VNĐ).
+```
+
+**Debug Mode (Show Technical Details):**
+
+```bash
+# Enable debug mode
+DEBUG=true node index.js
+```
+
+```
+> Tôi muốn đi Nha Trang từ Hồ Chí Minh vào ngày 25/12
+🧠 Intent: { intent: 'AVAILABILITY', origin: 'Hồ Chí Minh', destination: 'Nha Trang', date: '2023-12-25' }
+🗺️ Plan: { from: 'trips', join: {...}, select: [...] }
+🧠 SQL: SELECT trips.trip_id, routes.origin, ... WHERE ...
+┌─────────┬─────────┬──────────────┬───────────────┬─────────────────┐
+│ (index) │ trip_id │    origin    │  destination  │     status      │
+├─────────┼─────────┼──────────────┼───────────────┼─────────────────┤
+│    0    │   104   │ 'Hồ Chí Minh'│ 'Nha Tr & auto-fix
+│   ├── responseFormatter.js # Natural language response
+│   └── schemaInspector.js  # Database schema introspection
+├── utils/
+│   └── cli.js              # CLI utilities
+└── docs/
+    ├── DATABASE.md         # Database configuration guide
+    ├── DEBUG.md            # Debug mode documentation
+    └── SELF_HEALING.md     # Self-healing system
 ```
 
 ## 🏗️ Project Structure
 
 ```
 ├── index.js                 # Main entry point
-├── config/
+├── cSelf-Healing** - If error occurs, fetch schema and auto-fix SQL
+7. **Response Formatting** - Converts results to natural language
+
+### Self-Healing System
+
+When database schema changes (e.g., column renamed), agent automatically:
+
+1. Detects SQL error
+2. Fetches current database schema
+3. Uses AI to fix SQL based on actual schema
+4. Retries with corrected query
+5. Returns result seamlessly
+
+**Example:**
+```
+
+Admin changes: base_price → ticket_cost
+
+User: "Liệt kê các chuyến xe có giá vé cao hơn 200.000"
+
+Agent:
+
+- Try: SELECT \* FROM routes WHERE base_price > 200000
+- Error: ❌ no such column: base_price
+- Fetch schema → finds ticket_cost
+- Retry: SELECT \* FROM routes WHERE ticket_cost > 200000
+- Success: ✅ Returns correct results
+
+User sees:
+🔧 Đang tự động sửa lỗi...
+✅ Đã tự động sửa lỗi thành công!
+💬 Có 2 tuyến đường...
+
+```
 │   └── env.js              # Environment configuration
 ├── db/
 │   ├── base.js             # Database adapter interface
@@ -112,8 +176,9 @@ mongodb://username:password@hostname:27017/database_name
 │   ├── mysql.js            # MySQL adapter
 │   ├── mongodb.js          # MongoDB adapter
 │   └── sqlite.js           # SQLite adapter
-├── agent/
-│   ├── intentParser.js     # Intent detection & classification
+├── agent/ - Multi-database setup
+- [Self-Healing System](docs/SELF_HEALING.md) - Auto-fix SQL on schema changes
+- [Debug Mode Guide](docs/DEBUG.md) - Production vs development modessification
 │   ├── planner.js          # Query planning logic
 │   ├── sqlGenerator.js     # SQL generation
 │   └── responseFormatter.js # Natural language response
@@ -145,6 +210,9 @@ Find available trips with filters:
 ### PRICING
 
 Get route pricing information:
+
+- Self-healing query systems
+- Production-ready error handling
 
 - Origin/destination
 - Price filters (>, <, etc.)
