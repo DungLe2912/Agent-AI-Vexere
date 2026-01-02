@@ -5,22 +5,11 @@ This agent supports multiple database types with automatic detection and unified
 ## Supported Databases
 
 - **PostgreSQL** ✅
-- **MySQL/MariaDB** ✅
+- **MySQL** ✅
 - **MongoDB** ⚠️ (Limited - requires NoSQL query adaptation)
 - **SQLite** ✅
 
 ## Configuration
-
-### Option 1: Specify DB Type (Recommended)
-
-```env
-DB_TYPE=postgresql
-DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
-```
-
-### Option 2: Auto-Detection
-
-If `DB_TYPE` is not set, the system will auto-detect from the connection string:
 
 ```env
 # Auto-detects as PostgreSQL
