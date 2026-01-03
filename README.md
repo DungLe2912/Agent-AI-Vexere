@@ -49,14 +49,13 @@ An intelligent conversational agent that understands natural language questions 
 
 ## ⚙️ Configuration
 
-### Environment Variables | Required |
+### Environment Variables
 
-| ---------------- | -------------------------------------- | -------- |
-| `OPENAI_API_KEY` | Your OpenAI API key | ✅ |
-| `DATABASE_URL` | Database connection string | ✅ |
-| `DEBUG` | Show technical details (true/false) | ❌------- |
-| `OPENAI_API_KEY` | Your OpenAI API key | ✅ |
-| `DATABASE_URL` | Database connection string | ✅ |
+| Variable         | Description                         | Required |
+| ---------------- | ----------------------------------- | -------- |
+| `OPENAI_API_KEY` | Your OpenAI API key                 | ✅       |
+| `DATABASE_URL`   | Database connection string          | ✅       |
+| `DEBUG`          | Show technical details (true/false) | ❌       |
 
 ### Database Connection Strings
 
@@ -83,6 +82,8 @@ mongodb://username:password@hostname:27017/database_name
 ```
 /path/to/database.db
 ```
+
+## 📖 Usage Examples
 
 **Production Mode (Clean, User-Friendly):**
 
@@ -119,7 +120,28 @@ DEBUG=true node index.js
 ┌─────────┬─────────┬──────────────┬───────────────┬─────────────────┐
 │ (index) │ trip_id │    origin    │  destination  │     status      │
 ├─────────┼─────────┼──────────────┼───────────────┼─────────────────┤
-│    0    │   104   │ 'Hồ Chí Minh'│ 'Nha Tr & auto-fix
+│    0    │   104   │ 'Hồ Chí Minh'│ 'Nha Trang'   │   'cancelled'   │
+└─────────┴─────────┴──────────────┴───────────────┴─────────────────┘
+💬 Rất tiếc, chuyến đi Nha Trang từ Hồ Chí Minh vào ngày 25/12 đã bị hủy...
+```
+
+## 🏗️ Project Structure
+
+```
+├── index.js                 # Main entry point
+├── config/
+│   └── env.js              # Environment configuration
+├── db/
+│   ├── base.js             # Database adapter interface
+│   ├── factory.js          # Database factory with auto-detection
+│   ├── pg.js               # PostgreSQL adapter
+│   ├── mysql.js            # MySQL adapter
+│   ├── mongodb.js          # MongoDB adapter
+│   └── sqlite.js           # SQLite adapter
+├── agent/
+│   ├── intentParser.js     # Intent detection & classification
+│   ├── planner.js          # Query planning logic
+│   ├── sqlGenerator.js     # SQL generation & auto-fix
 │   ├── responseFormatter.js # Natural language response
 │   └── schemaInspector.js  # Database schema introspection
 ├── utils/
@@ -127,14 +149,17 @@ DEBUG=true node index.js
 └── docs/
     ├── DATABASE.md         # Database configuration guide
     ├── DEBUG.md            # Debug mode documentation
-    └── SELF_HEALING.md     # Self-healing system
+    └── SELF_HEALING.md     # Self-healing system guide
 ```
 
-## 🏗️ Project Structure
+## 🔄 How It Works
 
-```
-├── index.js                 # Main entry point
-├── cSelf-Healing** - If error occurs, fetch schema and auto-fix SQL
+1. **Question Classification** - Determines if input is a greeting, help request, or query
+2. **Intent Detection** - Extracts structured intent (PRICING, AVAILABILITY, ANALYTICS)
+3. **Query Planning** - Converts intent to abstract query plan
+4. **SQL Generation** - Renders query plan to SQL
+5. **Execution** - Runs query against database
+6. **Self-Healing** - If error occurs, fetch schema and auto-fix SQL
 7. **Response Formatting** - Converts results to natural language
 
 ### Self-Healing System
@@ -148,54 +173,24 @@ When database schema changes (e.g., column renamed), agent automatically:
 5. Returns result seamlessly
 
 **Example:**
-```
 
+```
 Admin changes: base_price → ticket_cost
 
 User: "Liệt kê các chuyến xe có giá vé cao hơn 200.000"
 
 Agent:
-
-- Try: SELECT \* FROM routes WHERE base_price > 200000
-- Error: ❌ no such column: base_price
-- Fetch schema → finds ticket_cost
-- Retry: SELECT \* FROM routes WHERE ticket_cost > 200000
-- Success: ✅ Returns correct results
+  - Try: SELECT * FROM routes WHERE base_price > 200000
+  - Error: ❌ no such column: base_price
+  - Fetch schema → finds ticket_cost
+  - Retry: SELECT * FROM routes WHERE ticket_cost > 200000
+  - Success: ✅ Returns correct results
 
 User sees:
-🔧 Đang tự động sửa lỗi...
-✅ Đã tự động sửa lỗi thành công!
-💬 Có 2 tuyến đường...
-
+  🔧 Đang tự động sửa lỗi...
+  ✅ Đã tự động sửa lỗi thành công!
+  💬 Có 2 tuyến đường...
 ```
-│   └── env.js              # Environment configuration
-├── db/
-│   ├── base.js             # Database adapter interface
-│   ├── factory.js          # Database factory with auto-detection
-│   ├── pg.js               # PostgreSQL adapter
-│   ├── mysql.js            # MySQL adapter
-│   ├── mongodb.js          # MongoDB adapter
-│   └── sqlite.js           # SQLite adapter
-├── agent/ - Multi-database setup
-- [Self-Healing System](docs/SELF_HEALING.md) - Auto-fix SQL on schema changes
-- [Debug Mode Guide](docs/DEBUG.md) - Production vs development modessification
-│   ├── planner.js          # Query planning logic
-│   ├── sqlGenerator.js     # SQL generation
-│   └── responseFormatter.js # Natural language response
-├── utils/
-│   └── cli.js              # CLI utilities
-└── docs/
-    └── DATABASE.md         # Database configuration guide
-```
-
-## 🔄 How It Works
-
-1. **Question Classification** - Determines if input is a greeting, help request, or query
-2. **Intent Detection** - Extracts structured intent (PRICING, AVAILABILITY, ANALYTICS)
-3. **Query Planning** - Converts intent to abstract query plan
-4. **SQL Generation** - Renders query plan to SQL
-5. **Execution** - Runs query against database
-6. **Response Formatting** - Converts results to natural language
 
 ## 🎯 Supported Query Types
 
@@ -211,41 +206,12 @@ Find available trips with filters:
 
 Get route pricing information:
 
-- Self-healing query systems
-- Production-ready error handling
-
-- Origin/destination
-- Price filters (>, <, etc.)
-
-### ANALYTICS
-
-Aggregate statistics:
-
-- Total seats (SUM)
-- Trip counts (COUNT)
-- Filtered by routes, dates, status
-
-## 🛡️ Security
-
-⚠️ **IMPORTANT**:
-
-- Never commit `.env` file to version control
-- Keep your OpenAI API key secure
-- Use read-only database credentials when possible
-- Validate all database connection strings
-
-## 📚 Documentation
-
-- [Database Configuration Guide](docs/DATABASE.md)
-- [Multi-Database Support Details](docs/DATABASE.md)
-
-## 🤝 Contributing
-
-This is a demo/educational project showcasing:
-
 - LLM-powered intent detection
 - Multi-database abstraction patterns
 - Natural language to SQL translation
+- Conversational AI architectures
+- Self-healing query systems
+- Production-ready error handlingtion
 - Conversational AI architectures
 
 ## 📝 License
